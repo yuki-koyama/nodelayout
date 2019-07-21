@@ -2,6 +2,20 @@ import bpy
 import sys
 import math
 
+bl_info = {
+    "name": "node-auto-layout",
+    "author": "Yuki Koyama",
+    "version": (0, 0),
+    "blender": (2, 80, 0),
+    "location": "Shader Editor, Compositor, Texture Node Editor > Node",
+    "description": "Automatic layout of a specified node tree",
+    "warning": "",
+    "support": "TESTING",
+    "wiki_url": "https://github.com/yuki-koyama/node-auto-layout",
+    "tracker_url": "https://github.com/yuki-koyama/node-auto-layout/issues",
+    "category": "Node"
+}
+
 
 def arrange_nodes(node_tree, verbose=False):
     max_num_iters = 2000
