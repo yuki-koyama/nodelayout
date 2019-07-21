@@ -128,7 +128,8 @@ def arrange_nodes(node_tree,
                     # Note: "dimensions" and "height" may not be correct depending on the situation
                     def get_height(node):
                         if node.dimensions.y > epsilon:
-                            return node.dimensions.y
+                            # Note: node.dimensions.y seems to store twice the value of node.height
+                            return node.dimensions.y / 2.0
                         elif math.fabs(node.height - 100.0) > epsilon:
                             return node.height
                         else:
