@@ -17,7 +17,7 @@ bl_info = {
 }
 
 
-def arrange_nodes(node_tree, verbose=False):
+def arrange_nodes(node_tree, verbose=False, use_current_layout_as_initial_guess=False):
     max_num_iters = 2000
     epsilon = 1e-05
     target_space = 50.0
@@ -27,6 +27,10 @@ def arrange_nodes(node_tree, verbose=False):
     fix_horizontal_location = True
     fix_vertical_location = True
     fix_overlaps = True
+
+    if not use_current_layout_as_initial_guess:
+        for node in node_tree.nodes:
+            node.location = (0.0, 0.0)
 
     if verbose:
         print("-----------------")
