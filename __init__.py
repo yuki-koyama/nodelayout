@@ -3,12 +3,12 @@ import sys
 import math
 
 bl_info = {
-    "name": "nodelayout",
+    "name": "Node Layout",
     "author": "Yuki Koyama",
     "version": (0, 0),
     "blender": (2, 80, 0),
     "location": "Shader Editor, Compositor, Texture Node Editor > Node",
-    "description": "Automatic layout of a specified node tree",
+    "description": "Automatic layout of node trees",
     "warning": "",
     "support": "TESTING",
     "wiki_url": "https://github.com/yuki-koyama/nodelayout",
