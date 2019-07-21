@@ -17,16 +17,17 @@ bl_info = {
 }
 
 
-def arrange_nodes(node_tree, verbose=False, use_current_layout_as_initial_guess=False):
+def arrange_nodes(node_tree,
+                  use_current_layout_as_initial_guess=False,
+                  fix_horizontal_location=True,
+                  fix_vertical_location=True,
+                  fix_overlaps=True,
+                  verbose=False):
     max_num_iters = 2000
     epsilon = 1e-05
     target_space = 50.0
 
     second_stage = False
-
-    fix_horizontal_location = True
-    fix_vertical_location = True
-    fix_overlaps = True
 
     if not use_current_layout_as_initial_guess:
         for node in node_tree.nodes:
