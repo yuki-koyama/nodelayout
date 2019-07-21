@@ -181,3 +181,41 @@ def arrange_nodes(node_tree, verbose=False):
                 second_stage = True
 
         previous_squared_deltas_sum = squared_deltas_sum
+
+
+class NODE_AUTO_LAYOUT_OP_LayoutNodes(bpy.types.Operator):
+    bl_idname = "node.arrange_nodes"
+    bl_label = "Node Auto Layout"
+    bl_description = "Arrange nodes automatically"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        if bpy.context.active_object.active_material is None:
+            self.report({'ERROR'}, "Failed because the scene does not use nodes currently.")
+            return {'CANCELLED'}
+
+        target_node_tree = bpy.context.active_object.active_material.node_tree
+
+        arrange_nodes(target_node_tree)
+
+        self.report({'INFO'}, "The node tree has been arranged.")
+        return {'FINISHED'}
+
+
+def menu_func(self, context):
+    self.layout.separator()
+    self.layout.operator(NODE_AUTO_LAYOUT_OP_LayoutNodes.bl_idname)
+
+
+def register():
+    bpy.utils.register_class(NODE_AUTO_LAYOUT_OP_LayoutNodes)
+    bpy.types.NODE_MT_node.append(menu_func)
+
+
+def unregister():
+    bpy.types.NODE_MT_node.remove(menu_func)
+    bpy.utils.unregister_class(NODE_AUTO_LAYOUT_OP_LayoutNodes)
+
+
+if __name__ == "__main__":
+    register()
