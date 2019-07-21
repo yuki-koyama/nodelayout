@@ -204,7 +204,7 @@ class NODELAYOUT_OP_ArrangeNodes(bpy.types.Operator):
             self.report({'ERROR'}, "Failed because no active node tree was found.")
             return {'CANCELLED'}
 
-        arrange_nodes(bpy.context.space_data.node_tree)
+        arrange_nodes(bpy.context.space_data.edit_tree)
 
         self.report({'INFO'}, "The node tree has been arranged.")
         return {'FINISHED'}
