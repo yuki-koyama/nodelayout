@@ -3,7 +3,7 @@ import sys
 import math
 
 bl_info = {
-    "name": "node-auto-layout",
+    "name": "nodelayout",
     "author": "Yuki Koyama",
     "version": (0, 0),
     "blender": (2, 80, 0),
@@ -11,8 +11,8 @@ bl_info = {
     "description": "Automatic layout of a specified node tree",
     "warning": "",
     "support": "TESTING",
-    "wiki_url": "https://github.com/yuki-koyama/node-auto-layout",
-    "tracker_url": "https://github.com/yuki-koyama/node-auto-layout/issues",
+    "wiki_url": "https://github.com/yuki-koyama/nodelayout",
+    "tracker_url": "https://github.com/yuki-koyama/nodelayout/issues",
     "category": "Node"
 }
 
@@ -188,7 +188,7 @@ def arrange_nodes(node_tree,
         previous_squared_deltas_sum = squared_deltas_sum
 
 
-class NODE_AUTO_LAYOUT_OP_LayoutNodes(bpy.types.Operator):
+class NODELAYOUT_OP_ArrangeNodes(bpy.types.Operator):
     bl_idname = "node.arrange_nodes"
     bl_label = "Node Auto Layout"
     bl_description = "Arrange nodes automatically"
@@ -211,17 +211,17 @@ class NODE_AUTO_LAYOUT_OP_LayoutNodes(bpy.types.Operator):
 
 def menu_func(self, context):
     self.layout.separator()
-    self.layout.operator(NODE_AUTO_LAYOUT_OP_LayoutNodes.bl_idname)
+    self.layout.operator(NODELAYOUT_OP_ArrangeNodes.bl_idname)
 
 
 def register():
-    bpy.utils.register_class(NODE_AUTO_LAYOUT_OP_LayoutNodes)
+    bpy.utils.register_class(NODELAYOUT_OP_ArrangeNodes)
     bpy.types.NODE_MT_node.append(menu_func)
 
 
 def unregister():
     bpy.types.NODE_MT_node.remove(menu_func)
-    bpy.utils.unregister_class(NODE_AUTO_LAYOUT_OP_LayoutNodes)
+    bpy.utils.unregister_class(NODELAYOUT_OP_ArrangeNodes)
 
 
 if __name__ == "__main__":

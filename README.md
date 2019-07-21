@@ -1,4 +1,4 @@
-# node-auto-layout
+# nodelayout
 
 A Blender add-on for automatic layout of nodes
 
