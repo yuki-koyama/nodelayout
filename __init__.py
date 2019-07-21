@@ -190,13 +190,15 @@ class NODE_AUTO_LAYOUT_OP_LayoutNodes(bpy.types.Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        if bpy.context.active_object.active_material is None:
-            self.report({'ERROR'}, "Failed because the scene does not use nodes currently.")
+        if bpy.context.space_data.type != "NODE_EDITOR":
+            self.report({'ERROR'}, "Failed because no active node tree was found.")
             return {'CANCELLED'}
 
-        target_node_tree = bpy.context.active_object.active_material.node_tree
+        if bpy.context.space_data.node_tree is None:
+            self.report({'ERROR'}, "Failed because no active node tree was found.")
+            return {'CANCELLED'}
 
-        arrange_nodes(target_node_tree)
+        arrange_nodes(bpy.context.space_data.node_tree)
 
         self.report({'INFO'}, "The node tree has been arranged.")
         return {'FINISHED'}
