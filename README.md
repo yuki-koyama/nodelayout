@@ -1,6 +1,29 @@
 # nodelayout
 
-A Blender add-on for automatic layout of nodes
+A Blender add-on for automatic layout of nodes.
+
+## Goals
+
+### As an Blender Add-On
+
+This repository can be used as a Blender add-on. It provides `Node Auto Layout` menu for the node editor.
+
+### As an Python Library
+
+This repository can be used as a Python library for developing other Blender add-ons and scripts. It provides the following function to perform the auto-layout.
+```python
+def arrange_nodes(node_tree: bpy.types.NodeTree,
+                  use_current_layout_as_initial_guess: bool = False,
+                  fix_horizontal_location: bool = True,
+                  fix_vertical_location: bool = True,
+                  fix_overlaps: bool = True,
+                  verbose: bool = False) -> None:
+    ...
+```
+
+## Blender Versions
+
+`2.80` or later. Only tested on `2.80`.
 
 ## TODOs
 
