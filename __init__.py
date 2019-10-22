@@ -17,12 +17,12 @@ bl_info = {
 }
 
 
-def arrange_nodes(node_tree,
-                  use_current_layout_as_initial_guess=False,
-                  fix_horizontal_location=True,
-                  fix_vertical_location=True,
-                  fix_overlaps=True,
-                  verbose=False):
+def arrange_nodes(node_tree: bpy.types.NodeTree,
+                  use_current_layout_as_initial_guess: bool = False,
+                  fix_horizontal_location: bool = True,
+                  fix_vertical_location: bool = True,
+                  fix_overlaps: bool = True,
+                  verbose: bool = False) -> None:
     max_num_iters = 2000
     epsilon = 1e-05
     target_space = 50.0
