@@ -2,6 +2,14 @@
 
 A Blender add-on for automatic layout of nodes.
 
+## Example
+
+Before:
+![](./docs/before.png)
+
+After:
+![](./docs/after.png)
+
 ## Goals
 
 ### As an Blender Add-On
