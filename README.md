@@ -31,7 +31,7 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
 
 ## Blender Versions
 
-`2.80` or later. Only tested on `2.80`.
+`2.80` or later. Tested on `2.80` and `2.81`.
 
 ## TODOs
 
