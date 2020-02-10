@@ -17,30 +17,15 @@ bl_info = {
 }
 
 
-def arrange_nodes(node_tree: bpy.types.NodeTree,
-                  use_current_layout_as_initial_guess: bool = False,
-                  fix_horizontal_location: bool = True,
-                  fix_vertical_location: bool = True,
-                  fix_overlaps: bool = True,
-                  verbose: bool = False) -> None:
-    max_num_iters = 2000
+def _arrange_nodes_internal_routine(node_tree: bpy.types.NodeTree, fix_horizontal_location: bool,
+                                    fix_vertical_location: bool, fix_overlaps: bool, verbose: bool,
+                                    is_second_stage: bool) -> None:
+
+    max_num_iters = 1000
     epsilon = 1e-05
-    target_space = 50.0
-
-    second_stage = False
-
-    if not use_current_layout_as_initial_guess:
-        for node in node_tree.nodes:
-            node.location = (0.0, 0.0)
-
-    if verbose:
-        print("-----------------")
-        print("Target nodes:")
-        for node in node_tree.nodes:
-            print("- " + node.name)
-
-    # In the first stage, expand nodes overly
-    target_space *= 2.0
+    target_space = 100.0 if not is_second_stage else 50.0
+    k_horizontal_distance = 0.9 if not is_second_stage else 0.5
+    k_vertical_distance = 0.5 if not is_second_stage else 0.05
 
     # Gauss-Seidel-style iterations
     previous_squared_deltas_sum = sys.float_info.max
@@ -49,7 +34,7 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
 
         if fix_horizontal_location:
             for link in node_tree.links:
-                k = 0.9 if not second_stage else 0.5
+                k_horizontal_distance = 0.9 if not is_second_stage else 0.5
                 threshold_factor = 2.0
 
                 x_from = link.from_node.location[0]
@@ -68,13 +53,13 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
                 delta_x_from = -lagrange * grad_C_x_from
                 delta_x_to = -lagrange * grad_C_x_to
 
-                link.from_node.location[0] += k * delta_x_from
-                link.to_node.location[0] += k * delta_x_to
+                link.from_node.location[0] += k_horizontal_distance * delta_x_from
+                link.to_node.location[0] += k_horizontal_distance * delta_x_to
 
-                squared_deltas_sum += k * k * (delta_x_from * delta_x_from + delta_x_to * delta_x_to)
+                squared_deltas_sum += k_horizontal_distance * k_horizontal_distance * (delta_x_from * delta_x_from +
+                                                                                       delta_x_to * delta_x_to)
 
         if fix_vertical_location:
-            k = 0.5 if not second_stage else 0.05
             socket_offset = 20.0
 
             def get_from_socket_index(node, node_socket):
@@ -101,12 +86,13 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
                 delta_y_from = -lagrange * grad_C_y_from
                 delta_y_to = -lagrange * grad_C_y_to
 
-                link.from_node.location[1] += k * delta_y_from
-                link.to_node.location[1] += k * delta_y_to
+                link.from_node.location[1] += k_vertical_distance * delta_y_from
+                link.to_node.location[1] += k_vertical_distance * delta_y_to
 
-                squared_deltas_sum += k * k * (delta_y_from * delta_y_from + delta_y_to * delta_y_to)
+                squared_deltas_sum += k_vertical_distance * k_vertical_distance * (delta_y_from * delta_y_from +
+                                                                                   delta_y_to * delta_y_to)
 
-        if fix_overlaps and second_stage:
+        if fix_overlaps and is_second_stage:
             k = 0.9
             margin = 0.5 * target_space
 
@@ -180,13 +166,35 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
 
         # Check the termination conditiion
         if math.fabs(previous_squared_deltas_sum - squared_deltas_sum) < epsilon:
-            if second_stage:
-                break
-            else:
-                target_space = 0.5 * target_space
-                second_stage = True
+            break
 
         previous_squared_deltas_sum = squared_deltas_sum
+
+
+def arrange_nodes(node_tree: bpy.types.NodeTree,
+                  use_current_layout_as_initial_guess: bool = False,
+                  fix_horizontal_location: bool = True,
+                  fix_vertical_location: bool = True,
+                  fix_overlaps: bool = True,
+                  verbose: bool = False) -> None:
+
+    if not use_current_layout_as_initial_guess:
+        for node in node_tree.nodes:
+            node.location = (0.0, 0.0)
+
+    if verbose:
+        print("-----------------")
+        print("Target nodes:")
+        for node in node_tree.nodes:
+            print("- " + node.name)
+
+    # First pass
+    _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location, fix_overlaps, verbose,
+                                    False)
+
+    # Second pass
+    _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location, fix_overlaps, verbose,
+                                    True)
 
 
 class NODELAYOUT_OP_ArrangeNodes(bpy.types.Operator):
