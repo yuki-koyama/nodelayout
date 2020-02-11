@@ -19,4 +19,5 @@ jobs:
         sudo apt-get update
         sudo apt-get install blender
     - name: test
-      run: blender ./tests/test-nodes.blend --background --python ./tests/test.py
+      run: |
+        blender ./tests/test-nodes.blend --background --python ./tests/test.py
