@@ -6,7 +6,7 @@ import datetime
 bl_info = {
     "name": "Node Layout",
     "author": "Yuki Koyama",
-    "version": (0, 2),
+    "version": (0, 3),
     "blender": (2, 80, 0),
     "location": "Shader Editor, Compositor, Texture Node Editor > Node",
     "description": "Automatic layout of node trees",
