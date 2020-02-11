@@ -5,10 +5,11 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
-
-print(sys.path)
-
 import nodelayout
 
 material = bpy.data.materials["Material"]
 nodelayout.arrange_nodes(material.node_tree, verbose=True)
+
+import pathlib
+
+pathlib.Path("success").touch()

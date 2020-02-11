@@ -21,3 +21,4 @@ jobs:
     - name: test
       run: |
         blender ./tests/test-nodes.blend --background --python ./tests/test.py
+        rm success
