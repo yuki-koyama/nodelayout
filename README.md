@@ -1,5 +1,7 @@
 # nodelayout
 
+![Test](https://github.com/yuki-koyama/nodelayout/workflows/Test/badge.svg)
+
 A Blender add-on for automatic layout of nodes.
 
 ## Example
