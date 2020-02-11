@@ -14,6 +14,8 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: install-blender
-      run: sudo apt-get install blender
+      run: |
+        sudo apt-get update
+        sudo apt-get install blender
     - name: test
       run: blender ./tests/test-nodes.blend --background --python ./tests/test.py
