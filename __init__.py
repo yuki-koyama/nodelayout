@@ -1,6 +1,7 @@
 import bpy
 import sys
 import math
+import datetime
 
 bl_info = {
     "name": "Node Layout",
@@ -19,7 +20,7 @@ bl_info = {
 
 def _arrange_nodes_internal_routine(node_tree: bpy.types.NodeTree, fix_horizontal_location: bool,
                                     fix_vertical_location: bool, fix_overlaps: bool, verbose: bool,
-                                    is_second_stage: bool) -> None:
+                                    is_second_stage: bool) -> int:
 
     max_num_iters = 1000
     epsilon = 1e-05
@@ -29,7 +30,8 @@ def _arrange_nodes_internal_routine(node_tree: bpy.types.NodeTree, fix_horizonta
 
     # Gauss-Seidel-style iterations
     previous_squared_deltas_sum = sys.float_info.max
-    for i in range(max_num_iters):
+    iter_count = 0
+    for iter_count in range(max_num_iters):
         squared_deltas_sum = 0.0
 
         if fix_horizontal_location:
@@ -162,13 +164,15 @@ def _arrange_nodes_internal_routine(node_tree: bpy.types.NodeTree, fix_horizonta
                         squared_deltas_sum += k * k * (delta_y_1 * delta_y_1 + delta_y_2 * delta_y_2)
 
         if verbose:
-            print("Iteration #" + str(i) + ": " + str(previous_squared_deltas_sum - squared_deltas_sum))
+            print("Iteration #" + str(iter_count) + ": " + str(previous_squared_deltas_sum - squared_deltas_sum))
 
         # Check the termination conditiion
         if math.fabs(previous_squared_deltas_sum - squared_deltas_sum) < epsilon:
             break
 
         previous_squared_deltas_sum = squared_deltas_sum
+
+    return iter_count
 
 
 def arrange_nodes(node_tree: bpy.types.NodeTree,
@@ -188,13 +192,23 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
         for node in node_tree.nodes:
             print("- " + node.name)
 
+    time_0 = datetime.datetime.now()
+
     # First pass
-    _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location, fix_overlaps, verbose,
+    iter_count_1st = _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location, fix_overlaps, verbose,
                                     False)
 
+    time_1 = datetime.datetime.now()
+
     # Second pass
-    _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location, fix_overlaps, verbose,
+    iter_count_2nd = _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location, fix_overlaps, verbose,
                                     True)
+
+    time_2 = datetime.datetime.now()
+
+    if verbose:
+        print("Elapsed time (1st pass): {} (#iters = {})".format(time_1 - time_0, iter_count_1st))
+        print("Elapsed time (2nd pass): {} (#iters = {})".format(time_2 - time_1, iter_count_2nd))
 
 
 class NODELAYOUT_OP_ArrangeNodes(bpy.types.Operator):
