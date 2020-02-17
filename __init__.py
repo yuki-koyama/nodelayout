@@ -242,14 +242,21 @@ def menu_func(self, context):
     self.layout.operator(NODELAYOUT_OP_ArrangeNodes.bl_idname)
 
 
+classes = [
+    NODELAYOUT_OP_ArrangeNodes,
+]
+
+
 def register():
-    bpy.utils.register_class(NODELAYOUT_OP_ArrangeNodes)
+    for cls in classes:
+        bpy.utils.register_class(cls)
     bpy.types.NODE_MT_node.append(menu_func)
 
 
 def unregister():
     bpy.types.NODE_MT_node.remove(menu_func)
-    bpy.utils.unregister_class(NODELAYOUT_OP_ArrangeNodes)
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
 
 
 if __name__ == "__main__":
