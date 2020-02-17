@@ -49,11 +49,10 @@ def _get_height(node: bpy.types.Node) -> float:
         return 200.0
 
 
-def _arrange_nodes_internal_routine(node_tree: bpy.types.NodeTree, fix_horizontal_location: bool,
+def _arrange_nodes_internal_routine(node_tree: bpy.types.NodeTree, max_num_iters: int, fix_horizontal_location: bool,
                                     fix_vertical_location: bool, fix_overlaps: bool, verbose: bool,
                                     is_second_stage: bool) -> int:
 
-    max_num_iters = 1000
     epsilon = 1e-05
     target_space = 100.0 if not is_second_stage else 50.0
     k_horizontal_distance = 0.9 if not is_second_stage else 0.5
@@ -186,6 +185,7 @@ def _arrange_nodes_internal_routine(node_tree: bpy.types.NodeTree, fix_horizonta
 
 def arrange_nodes(node_tree: bpy.types.NodeTree,
                   use_current_layout_as_initial_guess: bool = False,
+                  max_num_iters: int = 1000,
                   fix_horizontal_location: bool = True,
                   fix_vertical_location: bool = True,
                   fix_overlaps: bool = True,
@@ -204,14 +204,24 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
     time_0 = datetime.datetime.now()
 
     # First pass
-    iter_count_1st = _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location,
-                                                     fix_overlaps, verbose, False)
+    iter_count_1st = _arrange_nodes_internal_routine(node_tree,
+                                                     max_num_iters,
+                                                     fix_horizontal_location,
+                                                     fix_vertical_location,
+                                                     fix_overlaps,
+                                                     verbose=verbose,
+                                                     is_second_stage=False)
 
     time_1 = datetime.datetime.now()
 
     # Second pass
-    iter_count_2nd = _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location,
-                                                     fix_overlaps, verbose, True)
+    iter_count_2nd = _arrange_nodes_internal_routine(node_tree,
+                                                     max_num_iters,
+                                                     fix_horizontal_location,
+                                                     fix_vertical_location,
+                                                     fix_overlaps,
+                                                     verbose=verbose,
+                                                     is_second_stage=True)
 
     time_2 = datetime.datetime.now()
 
@@ -236,7 +246,11 @@ class NODELAYOUT_OP_ArrangeNodes(bpy.types.Operator):
             self.report({'ERROR'}, "Failed because no active node tree was found.")
             return {'CANCELLED'}
 
-        arrange_nodes(bpy.context.space_data.edit_tree)
+        scene = context.scene
+
+        arrange_nodes(node_tree=bpy.context.space_data.edit_tree,
+                      use_current_layout_as_initial_guess=scene.nodelayout_prop_bool,
+                      max_num_iters=scene.nodelayout_prop_int)
 
         self.report({'INFO'}, "The node tree has been arranged.")
         return {'FINISHED'}
@@ -259,6 +273,11 @@ class NODELAYOUT_PT_NodeLayoutPanel(bpy.types.Panel):
 
     def draw(self, context: bpy.types.Context):
         layout = self.layout
+        scene = context.scene
+
+        layout.label(text="Parameters:")
+        layout.prop(scene, "nodelayout_prop_int", text="#iterations")
+        layout.prop(scene, "nodelayout_prop_bool", text="Use current as initial")
 
         layout.label(text="Operations:")
         layout.operator(NODELAYOUT_OP_ArrangeNodes.bl_idname, text="Arrange all nodes")
@@ -277,13 +296,8 @@ classes = [
 
 def init_props() -> None:
     scene = bpy.types.Scene
-    scene.nodelayout_prop_int = IntProperty(name="#iterations",
-                                            description="The number of iterations",
-                                            default=1000,
-                                            min=0,
-                                            max=10000)
-    scene.nodelayout_prop_bool = BoolProperty(name="Use current",
-                                              description="Use the current layout as an initial solution",
+    scene.nodelayout_prop_int = IntProperty(description="The number of iterations", default=500, min=0, max=5000)
+    scene.nodelayout_prop_bool = BoolProperty(description="Use the current layout as an initial solution",
                                               default=False)
 
 
