@@ -2,6 +2,10 @@ import bpy
 import sys
 import math
 import datetime
+from bpy.props import (
+    IntProperty,
+    BoolProperty,
+)
 
 bl_info = {
     "name": "Node Layout",
@@ -223,7 +227,7 @@ class NODELAYOUT_OP_ArrangeNodes(bpy.types.Operator):
     bl_description = "Arrange nodes automatically"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context):
         if bpy.context.space_data.type != "NODE_EDITOR":
             self.report({'ERROR'}, "Failed because no active node tree was found.")
             return {'CANCELLED'}
@@ -246,24 +250,21 @@ class NODELAYOUT_PT_NodeLayoutPanel(bpy.types.Panel):
     bl_category = "Layout"
 
     @classmethod
-    def poll(cls, context):
-        for o in bpy.data.objects:
-            if o.select_get():
-                return True
-        return False
+    def poll(cls, context: bpy.types.Context):
+        return True
 
-    def draw_header(self, context):
+    def draw_header(self, context: bpy.types.Context):
         layout = self.layout
         layout.label(text="", icon='PLUGIN')
 
-    def draw(self, context):
+    def draw(self, context: bpy.types.Context):
         layout = self.layout
 
         layout.label(text="Operations:")
         layout.operator(NODELAYOUT_OP_ArrangeNodes.bl_idname, text="Arrange all nodes")
 
 
-def menu_func(self, context):
+def menu_func(self, context: bpy.types.Context) -> None:
     self.layout.separator()
     self.layout.operator(NODELAYOUT_OP_ArrangeNodes.bl_idname)
 
@@ -274,13 +275,33 @@ classes = [
 ]
 
 
+def init_props() -> None:
+    scene = bpy.types.Scene
+    scene.nodelayout_prop_int = IntProperty(name="#iterations",
+                                            description="The number of iterations",
+                                            default=1000,
+                                            min=0,
+                                            max=10000)
+    scene.nodelayout_prop_bool = BoolProperty(name="Use current",
+                                              description="Use the current layout as an initial solution",
+                                              default=False)
+
+
+def clear_props() -> None:
+    scene = bpy.types.Scene
+    del scene.nodelayout_prop_int
+    del scene.nodelayout_prop_bool
+
+
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.NODE_MT_node.append(menu_func)
+    init_props()
 
 
 def unregister():
+    clear_props()
     bpy.types.NODE_MT_node.remove(menu_func)
     for cls in classes:
         bpy.utils.unregister_class(cls)
