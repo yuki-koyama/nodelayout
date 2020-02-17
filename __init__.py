@@ -217,6 +217,7 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
 
 
 class NODELAYOUT_OP_ArrangeNodes(bpy.types.Operator):
+
     bl_idname = "node.arrange_nodes"
     bl_label = "Node Auto Layout"
     bl_description = "Arrange nodes automatically"
@@ -237,6 +238,31 @@ class NODELAYOUT_OP_ArrangeNodes(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class NODELAYOUT_PT_NodeLayoutPanel(bpy.types.Panel):
+
+    bl_label = "Node Auto Layout"
+    bl_space_type = 'NODE_EDITOR'
+    bl_region_type = 'UI'
+    bl_category = "Layout"
+
+    @classmethod
+    def poll(cls, context):
+        for o in bpy.data.objects:
+            if o.select_get():
+                return True
+        return False
+
+    def draw_header(self, context):
+        layout = self.layout
+        layout.label(text="", icon='PLUGIN')
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.label(text="Operations:")
+        layout.operator(NODELAYOUT_OP_ArrangeNodes.bl_idname, text="Arrange all nodes")
+
+
 def menu_func(self, context):
     self.layout.separator()
     self.layout.operator(NODELAYOUT_OP_ArrangeNodes.bl_idname)
@@ -244,6 +270,7 @@ def menu_func(self, context):
 
 classes = [
     NODELAYOUT_OP_ArrangeNodes,
+    NODELAYOUT_PT_NodeLayoutPanel,
 ]
 
 
