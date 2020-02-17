@@ -2,6 +2,11 @@ import bpy
 import sys
 import math
 import datetime
+from bpy.props import (
+    BoolProperty,
+    FloatProperty,
+    IntProperty,
+)
 
 bl_info = {
     "name": "Node Layout",
@@ -45,13 +50,19 @@ def _get_height(node: bpy.types.Node) -> float:
         return 200.0
 
 
-def _arrange_nodes_internal_routine(node_tree: bpy.types.NodeTree, fix_horizontal_location: bool,
-                                    fix_vertical_location: bool, fix_overlaps: bool, verbose: bool,
-                                    is_second_stage: bool) -> int:
+def _arrange_nodes_internal_routine(
+        node_tree: bpy.types.NodeTree,
+        max_num_iters: int,
+        target_space: float,
+        fix_horizontal_location: bool,
+        fix_vertical_location: bool,
+        fix_overlaps: bool,
+        verbose: bool,
+        is_second_stage: bool,
+) -> int:
 
-    max_num_iters = 1000
     epsilon = 1e-05
-    target_space = 100.0 if not is_second_stage else 50.0
+    target_space = 2.0 * target_space if not is_second_stage else target_space
     k_horizontal_distance = 0.9 if not is_second_stage else 0.5
     k_vertical_distance = 0.5 if not is_second_stage else 0.05
 
@@ -182,6 +193,8 @@ def _arrange_nodes_internal_routine(node_tree: bpy.types.NodeTree, fix_horizonta
 
 def arrange_nodes(node_tree: bpy.types.NodeTree,
                   use_current_layout_as_initial_guess: bool = False,
+                  max_num_iters: int = 1000,
+                  target_space: float = 50.0,
                   fix_horizontal_location: bool = True,
                   fix_vertical_location: bool = True,
                   fix_overlaps: bool = True,
@@ -200,14 +213,26 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
     time_0 = datetime.datetime.now()
 
     # First pass
-    iter_count_1st = _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location,
-                                                     fix_overlaps, verbose, False)
+    iter_count_1st = _arrange_nodes_internal_routine(node_tree,
+                                                     max_num_iters,
+                                                     target_space,
+                                                     fix_horizontal_location,
+                                                     fix_vertical_location,
+                                                     fix_overlaps,
+                                                     verbose=verbose,
+                                                     is_second_stage=False)
 
     time_1 = datetime.datetime.now()
 
     # Second pass
-    iter_count_2nd = _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location,
-                                                     fix_overlaps, verbose, True)
+    iter_count_2nd = _arrange_nodes_internal_routine(node_tree,
+                                                     max_num_iters,
+                                                     target_space,
+                                                     fix_horizontal_location,
+                                                     fix_vertical_location,
+                                                     fix_overlaps,
+                                                     verbose=verbose,
+                                                     is_second_stage=True)
 
     time_2 = datetime.datetime.now()
 
@@ -217,12 +242,13 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
 
 
 class NODELAYOUT_OP_ArrangeNodes(bpy.types.Operator):
+
     bl_idname = "node.arrange_nodes"
     bl_label = "Node Auto Layout"
     bl_description = "Arrange nodes automatically"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context):
+    def execute(self, context: bpy.types.Context):
         if bpy.context.space_data.type != "NODE_EDITOR":
             self.report({'ERROR'}, "Failed because no active node tree was found.")
             return {'CANCELLED'}
@@ -231,29 +257,83 @@ class NODELAYOUT_OP_ArrangeNodes(bpy.types.Operator):
             self.report({'ERROR'}, "Failed because no active node tree was found.")
             return {'CANCELLED'}
 
-        arrange_nodes(bpy.context.space_data.edit_tree)
+        scene = context.scene
+
+        arrange_nodes(node_tree=bpy.context.space_data.edit_tree,
+                      use_current_layout_as_initial_guess=scene.nodelayout_prop_bool,
+                      max_num_iters=scene.nodelayout_prop_int,
+                      target_space=scene.nodelayout_prop_float)
 
         self.report({'INFO'}, "The node tree has been arranged.")
         return {'FINISHED'}
 
 
-def menu_func(self, context):
+class NODELAYOUT_PT_NodeLayoutPanel(bpy.types.Panel):
+
+    bl_label = "Node Auto Layout"
+    bl_space_type = 'NODE_EDITOR'
+    bl_region_type = 'UI'
+    bl_category = "Layout"
+
+    @classmethod
+    def poll(cls, context: bpy.types.Context):
+        return True
+
+    def draw_header(self, context: bpy.types.Context):
+        layout = self.layout
+        layout.label(text="", icon='PLUGIN')
+
+    def draw(self, context: bpy.types.Context):
+        layout = self.layout
+        scene = context.scene
+
+        layout.label(text="Parameters:")
+        layout.prop(scene, "nodelayout_prop_int", text="#iterations")
+        layout.prop(scene, "nodelayout_prop_float", text="Target space")
+        layout.prop(scene, "nodelayout_prop_bool", text="Use current as initial")
+
+        layout.label(text="Operations:")
+        layout.operator(NODELAYOUT_OP_ArrangeNodes.bl_idname, text="Arrange all nodes")
+
+
+def menu_func(self, context: bpy.types.Context) -> None:
     self.layout.separator()
     self.layout.operator(NODELAYOUT_OP_ArrangeNodes.bl_idname)
 
 
 classes = [
     NODELAYOUT_OP_ArrangeNodes,
+    NODELAYOUT_PT_NodeLayoutPanel,
 ]
+
+
+def init_props() -> None:
+    scene = bpy.types.Scene
+    scene.nodelayout_prop_int = IntProperty(description="The number of iterations", default=500, min=0, max=5000)
+    scene.nodelayout_prop_bool = BoolProperty(description="Use the current layout as an initial solution",
+                                              default=False)
+    scene.nodelayout_prop_float = FloatProperty(description="The target space between nodes",
+                                                default=50.0,
+                                                min=0.0,
+                                                max=500.0)
+
+
+def clear_props() -> None:
+    scene = bpy.types.Scene
+    del scene.nodelayout_prop_int
+    del scene.nodelayout_prop_bool
+    del scene.nodelayout_prop_float
 
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.NODE_MT_node.append(menu_func)
+    init_props()
 
 
 def unregister():
+    clear_props()
     bpy.types.NODE_MT_node.remove(menu_func)
     for cls in classes:
         bpy.utils.unregister_class(cls)
