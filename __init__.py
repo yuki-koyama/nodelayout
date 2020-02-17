@@ -18,6 +18,33 @@ bl_info = {
 }
 
 
+def _get_from_socket_index(node: bpy.types.Node, node_socket: bpy.types.NodeSocket) -> int:
+    for i, socket in enumerate(node.outputs):
+        if socket == node_socket:
+            return i
+    assert False
+
+
+def _get_to_socket_index(node: bpy.types.Node, node_socket: bpy.types.NodeSocket) -> int:
+    for i, socket in enumerate(node.inputs):
+        if socket == node_socket:
+            return i
+    assert False
+
+
+# Note: "dimensions" and "height" may not be correct depending on the situation
+def _get_height(node: bpy.types.Node) -> float:
+    epsilon = 1e-05
+
+    if node.dimensions.y > epsilon:
+        # Note: node.dimensions.y seems to store twice the value of node.height
+        return node.dimensions.y / 2.0
+    elif math.fabs(node.height - 100.0) > epsilon:
+        return node.height
+    else:
+        return 200.0
+
+
 def _arrange_nodes_internal_routine(node_tree: bpy.types.NodeTree, fix_horizontal_location: bool,
                                     fix_vertical_location: bool, fix_overlaps: bool, verbose: bool,
                                     is_second_stage: bool) -> int:
@@ -64,21 +91,9 @@ def _arrange_nodes_internal_routine(node_tree: bpy.types.NodeTree, fix_horizonta
         if fix_vertical_location:
             socket_offset = 20.0
 
-            def get_from_socket_index(node, node_socket):
-                for i in range(len(node.outputs)):
-                    if node.outputs[i] == node_socket:
-                        return i
-                assert False
-
-            def get_to_socket_index(node, node_socket):
-                for i in range(len(node.inputs)):
-                    if node.inputs[i] == node_socket:
-                        return i
-                assert False
-
             for link in node_tree.links:
-                from_socket_index = get_from_socket_index(link.from_node, link.from_socket)
-                to_socket_index = get_to_socket_index(link.to_node, link.to_socket)
+                from_socket_index = _get_from_socket_index(link.from_node, link.from_socket)
+                to_socket_index = _get_to_socket_index(link.to_node, link.to_socket)
                 y_from = link.from_node.location[1] - socket_offset * from_socket_index
                 y_to = link.to_node.location[1] - socket_offset * to_socket_index
                 C = y_from - y_to
@@ -113,20 +128,10 @@ def _arrange_nodes_internal_routine(node_tree: bpy.types.NodeTree, fix_horizonta
                     rx_1 = 0.5 * w_1 + margin
                     rx_2 = 0.5 * w_2 + margin
 
-                    # Note: "dimensions" and "height" may not be correct depending on the situation
-                    def get_height(node):
-                        if node.dimensions.y > epsilon:
-                            # Note: node.dimensions.y seems to store twice the value of node.height
-                            return node.dimensions.y / 2.0
-                        elif math.fabs(node.height - 100.0) > epsilon:
-                            return node.height
-                        else:
-                            return 200.0
-
                     y_1 = node_1.location[1]
                     y_2 = node_2.location[1]
-                    h_1 = get_height(node_1)
-                    h_2 = get_height(node_2)
+                    h_1 = _get_height(node_1)
+                    h_2 = _get_height(node_2)
                     cy_1 = y_1 - 0.5 * h_1
                     cy_2 = y_2 - 0.5 * h_2
                     ry_1 = 0.5 * h_1 + margin
@@ -195,14 +200,14 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
     time_0 = datetime.datetime.now()
 
     # First pass
-    iter_count_1st = _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location, fix_overlaps, verbose,
-                                    False)
+    iter_count_1st = _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location,
+                                                     fix_overlaps, verbose, False)
 
     time_1 = datetime.datetime.now()
 
     # Second pass
-    iter_count_2nd = _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location, fix_overlaps, verbose,
-                                    True)
+    iter_count_2nd = _arrange_nodes_internal_routine(node_tree, fix_horizontal_location, fix_vertical_location,
+                                                     fix_overlaps, verbose, True)
 
     time_2 = datetime.datetime.now()
 
