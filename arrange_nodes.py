@@ -182,6 +182,13 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
                   fix_vertical_location: bool = True,
                   fix_overlaps: bool = True,
                   verbose: bool = False) -> None:
+    """Arrange nodes in the target node tree automatically.
+
+    Parameters
+    ----------
+    target_nodes : List[bpy.types.Node] or None
+        A list of target nodes whose positions will be automatically modified. When this list is not speficied, this function will handle all the nodes in the node tree as targets.
+    """
 
     if not use_current_layout_as_initial_guess:
         for node in node_tree.nodes:
