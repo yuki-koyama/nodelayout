@@ -34,6 +34,7 @@ def _get_height(node: bpy.types.Node) -> float:
 
 def _arrange_nodes_internal_routine(
         node_tree: bpy.types.NodeTree,
+        target_nodes: List[bpy.types.Node],
         max_num_iters: int,
         target_space: float,
         fix_horizontal_location: bool,
@@ -194,21 +195,27 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
         for node in node_tree.nodes:
             node.location = (0.0, 0.0)
 
+    if target_nodes is None:
+        target_nodes = []
+        for node in node_tree.nodes:
+            target_nodes.append(node)
+
     if verbose:
         print("-----------------")
         print("Target nodes:")
-        for node in node_tree.nodes:
+        for node in target_nodes:
             print("- " + node.name)
 
     time_0 = datetime.datetime.now()
 
     # First pass
     iter_count_1st = _arrange_nodes_internal_routine(node_tree,
+                                                     target_nodes,
                                                      max_num_iters,
                                                      target_space,
-                                                     fix_horizontal_location,
-                                                     fix_vertical_location,
-                                                     fix_overlaps,
+                                                     fix_horizontal_location=fix_horizontal_location,
+                                                     fix_vertical_location=fix_vertical_location,
+                                                     fix_overlaps=fix_overlaps,
                                                      verbose=verbose,
                                                      is_second_stage=False)
 
@@ -216,11 +223,12 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
 
     # Second pass
     iter_count_2nd = _arrange_nodes_internal_routine(node_tree,
+                                                     target_nodes,
                                                      max_num_iters,
                                                      target_space,
-                                                     fix_horizontal_location,
-                                                     fix_vertical_location,
-                                                     fix_overlaps,
+                                                     fix_horizontal_location=fix_horizontal_location,
+                                                     fix_vertical_location=fix_vertical_location,
+                                                     fix_overlaps=fix_overlaps,
                                                      verbose=verbose,
                                                      is_second_stage=True)
 
