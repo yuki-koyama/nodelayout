@@ -20,7 +20,7 @@ This repository can be used as a Blender add-on. It provides `Node Auto Layout` 
 
 ![](./docs/panel.png)
 
-### As an Python Library
+### As a Python Library
 
 This repository can be used as a Python library for developing other Blender add-ons and scripts. It provides the following function to perform the auto-layout.
 ```python
