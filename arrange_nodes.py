@@ -2,6 +2,7 @@ import bpy
 import sys
 import math
 import datetime
+from typing import List, Optional
 
 
 def _get_from_socket_index(node: bpy.types.Node, node_socket: bpy.types.NodeSocket) -> int:
@@ -173,6 +174,7 @@ def _arrange_nodes_internal_routine(
 
 
 def arrange_nodes(node_tree: bpy.types.NodeTree,
+                  target_nodes: Optional[List[bpy.types.Node]] = None,
                   use_current_layout_as_initial_guess: bool = False,
                   max_num_iters: int = 1000,
                   target_space: float = 50.0,
