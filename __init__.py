@@ -26,6 +26,36 @@ bl_info = {
 }
 
 
+class NODELAYOUT_OP_ArrangeSelectedNodes(bpy.types.Operator):
+
+    bl_idname = "node.arrange_selected_nodes"
+    bl_label = "Node Auto Layout"
+    bl_description = "Arrange selected nodes automatically"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context: bpy.types.Context):
+        if bpy.context.space_data.type != "NODE_EDITOR":
+            self.report({'ERROR'}, "Failed because no active node tree was found.")
+            return {'CANCELLED'}
+
+        if bpy.context.space_data.node_tree is None:
+            self.report({'ERROR'}, "Failed because no active node tree was found.")
+            return {'CANCELLED'}
+
+        scene = context.scene
+
+        target_nodes = [x for x in context.space_data.edit_tree.nodes if x.select]
+
+        arrange_nodes(node_tree=context.space_data.edit_tree,
+                      target_nodes=target_nodes,
+                      use_current_layout_as_initial_guess=scene.nodelayout_prop_bool,
+                      max_num_iters=scene.nodelayout_prop_int,
+                      target_space=scene.nodelayout_prop_float)
+
+        self.report({'INFO'}, "The node tree has been arranged.")
+        return {'FINISHED'}
+
+
 class NODELAYOUT_OP_ArrangeNodes(bpy.types.Operator):
 
     bl_idname = "node.arrange_nodes"
@@ -44,7 +74,7 @@ class NODELAYOUT_OP_ArrangeNodes(bpy.types.Operator):
 
         scene = context.scene
 
-        arrange_nodes(node_tree=bpy.context.space_data.edit_tree,
+        arrange_nodes(node_tree=context.space_data.edit_tree,
                       use_current_layout_as_initial_guess=scene.nodelayout_prop_bool,
                       max_num_iters=scene.nodelayout_prop_int,
                       target_space=scene.nodelayout_prop_float)
@@ -79,6 +109,7 @@ class NODELAYOUT_PT_NodeLayoutPanel(bpy.types.Panel):
 
         layout.label(text="Operations:")
         layout.operator(NODELAYOUT_OP_ArrangeNodes.bl_idname, text="Arrange all nodes")
+        layout.operator(NODELAYOUT_OP_ArrangeSelectedNodes.bl_idname, text="Arrange selected nodes")
 
 
 def menu_func(self, context: bpy.types.Context) -> None:
@@ -88,6 +119,7 @@ def menu_func(self, context: bpy.types.Context) -> None:
 
 classes = [
     NODELAYOUT_OP_ArrangeNodes,
+    NODELAYOUT_OP_ArrangeSelectedNodes,
     NODELAYOUT_PT_NodeLayoutPanel,
 ]
 

@@ -2,6 +2,7 @@ import bpy
 import sys
 import math
 import datetime
+from typing import List, Optional
 
 
 def _get_from_socket_index(node: bpy.types.Node, node_socket: bpy.types.NodeSocket) -> int:
@@ -33,6 +34,7 @@ def _get_height(node: bpy.types.Node) -> float:
 
 def _arrange_nodes_internal_routine(
         node_tree: bpy.types.NodeTree,
+        target_nodes: List[bpy.types.Node],
         max_num_iters: int,
         target_space: float,
         fix_horizontal_location: bool,
@@ -74,11 +76,14 @@ def _arrange_nodes_internal_routine(
                 delta_x_from = -lagrange * grad_C_x_from
                 delta_x_to = -lagrange * grad_C_x_to
 
-                link.from_node.location[0] += k_horizontal_distance * delta_x_from
-                link.to_node.location[0] += k_horizontal_distance * delta_x_to
+                # Update positions only when the node is in the target node list
+                if link.from_node in target_nodes:
+                    link.from_node.location[0] += k_horizontal_distance * delta_x_from
+                    squared_deltas_sum += k_horizontal_distance * k_horizontal_distance * delta_x_from * delta_x_from
 
-                squared_deltas_sum += k_horizontal_distance * k_horizontal_distance * (delta_x_from * delta_x_from +
-                                                                                       delta_x_to * delta_x_to)
+                if link.to_node in target_nodes:
+                    link.to_node.location[0] += k_horizontal_distance * delta_x_to
+                    squared_deltas_sum += k_horizontal_distance * k_horizontal_distance * delta_x_to * delta_x_to
 
         if fix_vertical_location:
             socket_offset = 20.0
@@ -95,11 +100,14 @@ def _arrange_nodes_internal_routine(
                 delta_y_from = -lagrange * grad_C_y_from
                 delta_y_to = -lagrange * grad_C_y_to
 
-                link.from_node.location[1] += k_vertical_distance * delta_y_from
-                link.to_node.location[1] += k_vertical_distance * delta_y_to
+                # Update positions only when the node is in the target node list
+                if link.from_node in target_nodes:
+                    link.from_node.location[1] += k_vertical_distance * delta_y_from
+                    squared_deltas_sum += k_vertical_distance * k_vertical_distance * delta_y_from * delta_y_from
 
-                squared_deltas_sum += k_vertical_distance * k_vertical_distance * (delta_y_from * delta_y_from +
-                                                                                   delta_y_to * delta_y_to)
+                if link.to_node in target_nodes:
+                    link.to_node.location[1] += k_vertical_distance * delta_y_to
+                    squared_deltas_sum += k_vertical_distance * k_vertical_distance * delta_y_to * delta_y_to
 
         if fix_overlaps and is_second_stage:
             k = 0.9
@@ -144,10 +152,13 @@ def _arrange_nodes_internal_routine(
                         delta_x_1 = -lagrange * grad_C_x_1
                         delta_x_2 = -lagrange * grad_C_x_2
 
-                        node_1.location[0] += k * delta_x_1
-                        node_2.location[0] += k * delta_x_2
+                        if node_1 in target_nodes:
+                            node_1.location[0] += k * delta_x_1
+                            squared_deltas_sum += k * k * delta_x_1 * delta_x_1
 
-                        squared_deltas_sum += k * k * (delta_x_1 * delta_x_1 + delta_x_2 * delta_x_2)
+                        if node_2 in target_nodes:
+                            node_2.location[0] += k * delta_x_2
+                            squared_deltas_sum += k * k * delta_x_2 * delta_x_2
                     else:
                         grad_C_y_1 = 1.0 if cy_1 - cy_2 >= 0.0 else -1.0
                         grad_C_y_2 = -1.0 if cy_1 - cy_2 >= 0.0 else 1.0
@@ -155,10 +166,13 @@ def _arrange_nodes_internal_routine(
                         delta_y_1 = -lagrange * grad_C_y_1
                         delta_y_2 = -lagrange * grad_C_y_2
 
-                        node_1.location[1] += k * delta_y_1
-                        node_2.location[1] += k * delta_y_2
+                        if node_1 in target_nodes:
+                            node_1.location[1] += k * delta_y_1
+                            squared_deltas_sum += k * k * delta_y_1 * delta_y_1
 
-                        squared_deltas_sum += k * k * (delta_y_1 * delta_y_1 + delta_y_2 * delta_y_2)
+                        if node_2 in target_nodes:
+                            node_2.location[1] += k * delta_y_2
+                            squared_deltas_sum += k * k * delta_y_2 * delta_y_2
 
         if verbose:
             print("Iteration #" + str(iter_count) + ": " + str(previous_squared_deltas_sum - squared_deltas_sum))
@@ -173,33 +187,47 @@ def _arrange_nodes_internal_routine(
 
 
 def arrange_nodes(node_tree: bpy.types.NodeTree,
+                  target_nodes: Optional[List[bpy.types.Node]] = None,
                   use_current_layout_as_initial_guess: bool = False,
-                  max_num_iters: int = 1000,
+                  max_num_iters: int = 500,
                   target_space: float = 50.0,
                   fix_horizontal_location: bool = True,
                   fix_vertical_location: bool = True,
                   fix_overlaps: bool = True,
                   verbose: bool = False) -> None:
+    """Arrange nodes in the target node tree automatically.
 
-    if not use_current_layout_as_initial_guess:
+    Parameters
+    ----------
+    target_nodes : List[bpy.types.Node] or None
+        A list of target nodes whose positions will be automatically modified. When this list is not speficied, this function will handle all the nodes in the node tree as targets.
+    """
+
+    if target_nodes is None:
+        target_nodes = []
         for node in node_tree.nodes:
-            node.location = (0.0, 0.0)
+            target_nodes.append(node)
 
     if verbose:
         print("-----------------")
         print("Target nodes:")
-        for node in node_tree.nodes:
+        for node in target_nodes:
             print("- " + node.name)
+
+    if not use_current_layout_as_initial_guess:
+        for node in target_nodes:
+            node.location = (0.0, 0.0)
 
     time_0 = datetime.datetime.now()
 
     # First pass
     iter_count_1st = _arrange_nodes_internal_routine(node_tree,
+                                                     target_nodes,
                                                      max_num_iters,
                                                      target_space,
-                                                     fix_horizontal_location,
-                                                     fix_vertical_location,
-                                                     fix_overlaps,
+                                                     fix_horizontal_location=fix_horizontal_location,
+                                                     fix_vertical_location=fix_vertical_location,
+                                                     fix_overlaps=fix_overlaps,
                                                      verbose=verbose,
                                                      is_second_stage=False)
 
@@ -207,11 +235,12 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
 
     # Second pass
     iter_count_2nd = _arrange_nodes_internal_routine(node_tree,
+                                                     target_nodes,
                                                      max_num_iters,
                                                      target_space,
-                                                     fix_horizontal_location,
-                                                     fix_vertical_location,
-                                                     fix_overlaps,
+                                                     fix_horizontal_location=fix_horizontal_location,
+                                                     fix_vertical_location=fix_vertical_location,
+                                                     fix_overlaps=fix_overlaps,
                                                      verbose=verbose,
                                                      is_second_stage=True)
 

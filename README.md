@@ -25,8 +25,9 @@ This repository can be used as a Blender add-on. It provides `Node Auto Layout` 
 This repository can be used as a Python library for developing other Blender add-ons and scripts. It provides the following function to perform the auto-layout.
 ```python
 def arrange_nodes(node_tree: bpy.types.NodeTree,
+                  target_nodes: Optional[List[bpy.types.Node]] = None,
                   use_current_layout_as_initial_guess: bool = False,
-                  max_num_iters: int = 1000,
+                  max_num_iters: int = 500,
                   target_space: float = 50.0,
                   fix_horizontal_location: bool = True,
                   fix_vertical_location: bool = True,
@@ -43,5 +44,6 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
 
 - Improve controllability of the panel UI
 - Add support of layout frames
-- Add support of arranging only selected nodes
 - Create documentation
+- Use Jacobi-style constraint projection
+- Use numpy and vectorization to improve performance
