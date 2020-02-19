@@ -189,12 +189,12 @@ def _arrange_nodes_internal_routine(
 def arrange_nodes(node_tree: bpy.types.NodeTree,
                   target_nodes: Optional[List[bpy.types.Node]] = None,
                   use_current_layout_as_initial_guess: bool = False,
-                  max_num_iters: int = 1000,
+                  max_num_iters: int = 500,
                   target_space: float = 50.0,
                   fix_horizontal_location: bool = True,
                   fix_vertical_location: bool = True,
                   fix_overlaps: bool = True,
-                  verbose: bool = True) -> None:
+                  verbose: bool = False) -> None:
     """Arrange nodes in the target node tree automatically.
 
     Parameters
