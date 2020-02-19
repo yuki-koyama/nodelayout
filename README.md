@@ -44,5 +44,6 @@ def arrange_nodes(node_tree: bpy.types.NodeTree,
 
 - Improve controllability of the panel UI
 - Add support of layout frames
-- Add support of arranging only selected nodes
 - Create documentation
+- Use Jacobi-style constraint projection
+- Use numpy and vectorization to improve performance
